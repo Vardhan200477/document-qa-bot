@@ -1,9 +1,8 @@
-streamlit==1.45.1
-sentence-transformers==3.0.1
-transformers==4.44.2
-torch==2.4.1
-chromadb==0.5.5
-faiss-cpu==1.8.0
-pypdf==4.3.1
-python-dotenv==1.0.1
+streamlit
+sentence-transformers
+chromadb
+faiss-cpu
+pypdf
+python-dotenv
 protobuf==3.20.3
+torch
