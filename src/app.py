@@ -1,12 +1,27 @@
 import streamlit as st
 import os
+import chromadb
 
-from query import ask_question
 from ingest import ingest_pdf
+from config import DB_PATH, COLLECTION_NAME
 
 st.set_page_config(page_title="Document ChatBot")
 
 st.title("📄 Document ChatBot")
+
+# Initialize ChromaDB
+client = chromadb.PersistentClient(path=DB_PATH)
+
+collection = client.get_or_create_collection(
+    name=COLLECTION_NAME
+)
+
+# Automatically ingest sample PDF if collection is empty
+if collection.count() == 0:
+    ingest_pdf("data/sample_resume.pdf")
+
+# Import query AFTER database initialization
+from query import ask_question
 
 # Sidebar
 st.sidebar.title("Upload PDF")
@@ -18,7 +33,10 @@ uploaded_file = st.sidebar.file_uploader(
 
 if uploaded_file is not None:
 
-    save_path = os.path.join("data", uploaded_file.name)
+    save_path = os.path.join(
+        "data",
+        uploaded_file.name
+    )
 
     with open(save_path, "wb") as f:
         f.write(uploaded_file.getbuffer())
