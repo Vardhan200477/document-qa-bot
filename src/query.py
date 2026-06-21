@@ -21,10 +21,11 @@ collection = client.get_or_create_collection(
 
 def ask_question(question):
     try:
+
         # Convert question to embedding
         query_embedding = embedding_model.encode(question).tolist()
 
-        # Search similar chunks
+        # Retrieve top matching chunk
         results = collection.query(
             query_embeddings=[query_embedding],
             n_results=1
@@ -33,17 +34,39 @@ def ask_question(question):
         documents = results["documents"][0]
         metadatas = results["metadatas"][0]
 
-        print("Question:", question)
-        print("Documents found:", documents)
-
-        # No matching documents
         if len(documents) == 0:
             return "No information found in the document.", []
 
-        # Return the most relevant chunk
-        answer = documents[0]
+        context = documents[0]
 
-        return answer, metadatas
+        lines = context.split("\n")
+
+        question_lower = question.lower()
+
+        # Identify field being asked
+        if "name" in question_lower:
+            keyword = "name:"
+        elif "education" in question_lower:
+            keyword = "education:"
+        elif "skill" in question_lower:
+            keyword = "skills:"
+        elif "project" in question_lower:
+            keyword = "projects:"
+        elif "experience" in question_lower:
+            keyword = "experience:"
+        elif "objective" in question_lower:
+            keyword = "objective:"
+        else:
+            # Return entire chunk if field not recognized
+            return context, metadatas
+
+        # Find matching line
+        for line in lines:
+            if line.lower().startswith(keyword):
+                answer = line.split(":", 1)[1].strip()
+                return answer, metadatas
+
+        return "Information not found in the document.", metadatas
 
     except Exception as e:
         print("ERROR:", str(e))
