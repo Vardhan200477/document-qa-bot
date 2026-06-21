@@ -1,9 +1,7 @@
 streamlit
 sentence-transformers
-transformers
 torch
 chromadb
-faiss-cpu
 pypdf
 python-dotenv
 protobuf==3.20.3

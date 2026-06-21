@@ -1,6 +1,5 @@
 import chromadb
 from sentence_transformers import SentenceTransformer
-from transformers import pipeline
 
 from config import (
     DB_PATH,
@@ -10,12 +9,6 @@ from config import (
 
 # Load embedding model
 embedding_model = SentenceTransformer(EMBEDDING_MODEL)
-
-# Load FLAN-T5 Small model
-qa_model = pipeline(
-    "text2text-generation",
-    model="google/flan-t5-small"
-)
 
 # Connect to ChromaDB
 client = chromadb.PersistentClient(path=DB_PATH)
@@ -31,45 +24,24 @@ def ask_question(question):
         # Convert question to embedding
         query_embedding = embedding_model.encode(question).tolist()
 
-        # Retrieve top 3 relevant chunks
+        # Search similar chunks
         results = collection.query(
             query_embeddings=[query_embedding],
-            n_results=3
+            n_results=1
         )
 
         documents = results["documents"][0]
         metadatas = results["metadatas"][0]
 
-        # If nothing found
+        print("Question:", question)
+        print("Documents found:", documents)
+
+        # No matching documents
         if len(documents) == 0:
             return "No information found in the document.", []
 
-        # Remove duplicate chunks
-        documents = list(dict.fromkeys(documents))
-
-        # Create context
-        context = "\n".join(documents)
-
-        # Prompt for FLAN-T5
-        prompt = f"""
-Answer the question based only on the context below.
-
-Context:
-{context}
-
-Question:
-{question}
-
-Answer:
-"""
-
-        # Generate answer
-        response = qa_model(
-            prompt,
-            max_new_tokens=50
-        )
-
-        answer = response[0]["generated_text"]
+        # Return the most relevant chunk
+        answer = documents[0]
 
         return answer, metadatas
 
