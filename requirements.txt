@@ -7,3 +7,4 @@ chromadb
 pypdf
 google-generativeai
 python-dotenv
+torchvision
