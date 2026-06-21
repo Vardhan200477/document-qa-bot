@@ -12,7 +12,8 @@ from config import (
 # Configure Gemini
 genai.configure(api_key=GEMINI_API_KEY)
 
-model = genai.GenerativeModel("gemini-2.5-flash")
+# Use 1.5 Flash
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 # Load embedding model
 embedding_model = SentenceTransformer(EMBEDDING_MODEL)
@@ -20,28 +21,38 @@ embedding_model = SentenceTransformer(EMBEDDING_MODEL)
 # Connect to ChromaDB
 client = chromadb.PersistentClient(path=DB_PATH)
 
+# Create collection if it doesn't exist
 collection = client.get_or_create_collection(
     name=COLLECTION_NAME
 )
 
 
 def ask_question(question):
-    # Convert question to embedding
-    query_embedding = embedding_model.encode(question).tolist()
 
-    # Search similar chunks
-    results = collection.query(
-        query_embeddings=[query_embedding],
-        n_results=3
-    )
+    try:
+        # Convert question to embedding
+        query_embedding = embedding_model.encode(question).tolist()
 
-    documents = results["documents"][0]
-    metadatas = results["metadatas"][0]
+        # Search similar chunks
+        results = collection.query(
+            query_embeddings=[query_embedding],
+            n_results=3
+        )
 
-    # Create context
-    context = "\n\n".join(documents)
+        documents = results["documents"][0]
+        metadatas = results["metadatas"][0]
 
-    prompt = f"""
+        print("Question:", question)
+        print("Documents found:", documents)
+
+        # If no documents found
+        if len(documents) == 0:
+            return "No information found in the document.", []
+
+        # Create context
+        context = "\n\n".join(documents)
+
+        prompt = f"""
 You are a helpful AI assistant.
 
 Answer ONLY using the information present in the context.
@@ -58,9 +69,19 @@ Question:
 Answer:
 """
 
-    response = model.generate_content(prompt)
+        print("Sending prompt to Gemini...")
 
-    return response.text, metadatas
+        response = model.generate_content(prompt)
+
+        print("Gemini replied.")
+
+        return response.text, metadatas
+
+    except Exception as e:
+
+        print("ERROR:", str(e))
+
+        return f"Error: {str(e)}", []
 
 
 if __name__ == "__main__":
@@ -78,6 +99,7 @@ if __name__ == "__main__":
         print(answer)
 
         print("\nSources:")
+
         for source in sources:
             print(
                 f"{source['source']} "
