@@ -1,18 +1,11 @@
 import chromadb
 from sentence_transformers import SentenceTransformer
-import google.generativeai as genai
 
 from config import (
     DB_PATH,
     COLLECTION_NAME,
-    EMBEDDING_MODEL,
-    GEMINI_API_KEY
+    EMBEDDING_MODEL
 )
-
-# Configure Gemini
-genai.configure(api_key=GEMINI_API_KEY)
-
-model = genai.GenerativeModel("gemini-2.0-flash")
 
 # Load embedding model
 embedding_model = SentenceTransformer(EMBEDDING_MODEL)
@@ -29,6 +22,7 @@ collection = client.get_or_create_collection(
 def ask_question(question):
 
     try:
+
         # Convert question to embedding
         query_embedding = embedding_model.encode(question).tolist()
 
@@ -44,37 +38,14 @@ def ask_question(question):
         print("Question:", question)
         print("Documents found:", documents)
 
-        # If no documents found
+        # No matching documents
         if len(documents) == 0:
             return "No information found in the document.", []
 
-        # Create context
-        context = "\n\n".join(documents)
+        # Combine retrieved chunks
+        answer = "\n\n".join(documents)
 
-        prompt = f"""
-You are a helpful AI assistant.
-
-Answer ONLY using the information present in the context.
-
-If the answer is not present in the context, reply:
-"I could not find that information in the document."
-
-Context:
-{context}
-
-Question:
-{question}
-
-Answer:
-"""
-
-        print("Sending prompt to Gemini...")
-
-        response = model.generate_content(prompt)
-
-        print("Gemini replied.")
-
-        return response.text, metadatas
+        return answer, metadatas
 
     except Exception as e:
 
