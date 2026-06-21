@@ -12,8 +12,7 @@ from config import (
 # Configure Gemini
 genai.configure(api_key=GEMINI_API_KEY)
 
-# Use 1.5 Flash
-model = genai.GenerativeModel("gemini-1.5-flash")
+model = genai.GenerativeModel("gemini-2.0-flash")
 
 # Load embedding model
 embedding_model = SentenceTransformer(EMBEDDING_MODEL)
