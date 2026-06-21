@@ -13,7 +13,7 @@ embedding_model = SentenceTransformer(EMBEDDING_MODEL)
 # Connect to ChromaDB
 client = chromadb.PersistentClient(path=DB_PATH)
 
-# Create collection if it doesn't exist
+# Get collection
 collection = client.get_or_create_collection(
     name=COLLECTION_NAME
 )
@@ -21,11 +21,10 @@ collection = client.get_or_create_collection(
 
 def ask_question(question):
     try:
-
         # Convert question to embedding
         query_embedding = embedding_model.encode(question).tolist()
 
-        # Retrieve top matching chunk
+        # Retrieve most relevant chunk
         results = collection.query(
             query_embeddings=[query_embedding],
             n_results=1
@@ -39,32 +38,40 @@ def ask_question(question):
 
         context = documents[0]
 
-        lines = context.split("\n")
+        print("Context:")
+        print(context)
 
         question_lower = question.lower()
 
-        # Identify field being asked
+        # Map question keywords
         if "name" in question_lower:
-            keyword = "name:"
-        elif "education" in question_lower:
-            keyword = "education:"
+            keyword = "name"
         elif "skill" in question_lower:
-            keyword = "skills:"
+            keyword = "skill"
+        elif "education" in question_lower:
+            keyword = "education"
         elif "project" in question_lower:
-            keyword = "projects:"
+            keyword = "project"
         elif "experience" in question_lower:
-            keyword = "experience:"
+            keyword = "experience"
         elif "objective" in question_lower:
-            keyword = "objective:"
+            keyword = "objective"
         else:
-            # Return entire chunk if field not recognized
             return context, metadatas
 
-        # Find matching line
+        # Search line by line
+        lines = context.split("\n")
+
         for line in lines:
-            if line.lower().startswith(keyword):
-                answer = line.split(":", 1)[1].strip()
-                return answer, metadatas
+            if keyword in line.lower():
+                if ":" in line:
+                    return line.split(":", 1)[1].strip(), metadatas
+                else:
+                    return line.strip(), metadatas
+
+        # Fallback: search in full context
+        if keyword in context.lower():
+            return context, metadatas
 
         return "Information not found in the document.", metadatas
 
