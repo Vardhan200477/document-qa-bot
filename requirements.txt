@@ -1,7 +1,8 @@
-google-generativeai
-chromadb
-pypdf
-python-docx
-python-dotenv
 streamlit
-tqdm
+langchain
+langchain-community
+faiss-cpu
+sentence-transformers
+pypdf
+google-generativeai
+python-dotenv
